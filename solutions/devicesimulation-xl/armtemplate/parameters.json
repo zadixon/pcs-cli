@@ -39,7 +39,7 @@
       "value": ""
     },
     "solutionDockerTag": {
-      "value": "testing"
+      "value": "DS-1.0.2"
     },
     "vmSetupScriptUri": {
       "value": "https://raw.githubusercontent.com/Azure/pcs-cli/master/solutions/devicesimulation/single-vm/setup.sh"

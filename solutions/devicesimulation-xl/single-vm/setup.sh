@@ -218,6 +218,7 @@ wget $SETUP_URL/init -O /etc/init.d/azure-iot-solution \
 
 echo "Port 22" >> /etc/ssh/sshd_config
 echo "Port 10022" >> /etc/ssh/sshd_config
+service ssh restart
 
 # ========================================================================
 

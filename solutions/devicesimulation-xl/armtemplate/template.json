@@ -181,7 +181,7 @@
     },
     "remoteEndpointSSLThumbprint": {
       "type": "string",
-      "defaultValue": "1234567890000000000000000000000000ABCDEF",
+      "defaultValue": "1230000000000000000000000000000000000000",
       "metadata": {
         "description": "This is the thumbprint of the HTTPS SSL Certificate"
       }
@@ -189,13 +189,13 @@
     "remoteEndpointCertificate": {
       "type": "securestring",
       "metadata": {
-        "description": "The certificate that needs to be uploaded to the VM"
+        "description": "The SSL certificate public key used by the web server in the VMs"
       }
     },
     "remoteEndpointCertificateKey": {
       "type": "securestring",
       "metadata": {
-        "description": "The certificate key that needs to be uploaded to the VM"
+        "description": "The SSL certificate private key used by the web server in the VMs"
       }
     },
     "subscriptionDomain": {
@@ -409,7 +409,7 @@
               "destinationPortRange": "10022",
               "sourceAddressPrefix": "*",
               "destinationAddressPrefix": "*",
-              "access": "Deny",
+              "access": "Allow",
               "priority": 102,
               "direction": "Inbound"
             }
