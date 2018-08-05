@@ -1,41 +1,54 @@
 {
-  "solutionName": {
-    "value": "{Added through command line interface}"
-  },
-  "azureWebsiteName": {
-    "value": "{Added through command line interface}"
-  },
-  "adminUsername": {
-    "value": "{Added through command line interface}"
-  },
-  "adminPassword": {
-    "value": "{Added through command line interface}"
-  },
-  "remoteEndpointSSLThumbprint": {
-    "value": "{Added through command line interface}"
-  },
-  "remoteEndpointCertificate": {
-    "value": "{Added through command line interface}"
-  },
-  "remoteEndpointCertificateKey": {
-    "value": "{Added through command line interface}"
-  },
-  "aadTenantId": {
-    "value": "{Added through command line interface}"
-  },
-  "aadClientId": {
-    "value": "{Added through command line interface}"
-  },
-  "domain": {
-    "value": "{Added through command line interface}"
-  },
-  "subscriptionId": {
-    "value": "{Added through command line interface}"
-  },
-  "pcsReleaseVersion": {
-    "value": "{Added through command line interface}"
-  },
-  "pcsDockerTag": {
-    "value": "{Added through command line interface}"
+  "$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "solutionName": {
+      "value": "GEN-UNIQUE-32"
+    },
+    "azureWebsiteName": {
+      "value": "GEN-UNIQUE-32"
+    },
+    "adminUsername": {
+      "value": "delucato"
+    },
+    "adminPassword": {
+      "value": "GEN-PASSWORD"
+    },
+    "remoteEndpointSSLThumbprint": {
+      "value": ""
+    },
+    "remoteEndpointCertificate": {
+      "value": ""
+    },
+    "remoteEndpointCertificateKey": {
+      "value": ""
+    },
+    "aadTenantId": {
+      "value": "[subscription().tenantId]"
+    },
+    "aadClientId": {
+      "value": ""
+    },
+    "domain": {
+      "value": ""
+    },
+    "subscriptionId": {
+      "value": "[subscription().subscriptionId]"
+    },
+    "pcsReleaseVersion": {
+      "value": ""
+    },
+    "pcsDockerTag": {
+      "value": "devis"
+    },
+    "vmSetupScriptUri": {
+      "value": "https://raw.githubusercontent.com/Azure/pcs-cli/master/solutions/devicesimulation/single-vm/setup.sh"
+    },
+    "vmssName": {
+      "value": "GEN-UNIQUE-32"
+    },
+    "instanceCount": {
+      "value": 3
+    }
   }
 }

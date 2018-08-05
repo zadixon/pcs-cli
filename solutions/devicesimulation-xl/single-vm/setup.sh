@@ -23,6 +23,7 @@ export PCS_IOTHUB_CONNSTRING=""
 
 while [ "$#" -gt 0 ]; do
     case "$1" in
+        --solution-setup-url)      PCS_SOLUTION_SETUP_URL="$2" ;; # e.g. https://raw.githubusercontent.com/Azure/pcs-cli/1M/solutions/devicesimulation-xl
         --subscription-domain)     PCS_SUBSCRIPTION_DOMAIN="$2" ;;
         --subscription-id)         PCS_SUBSCRIPTION_ID="$2" ;;
         --hostname)                HOST_NAME="$2" ;;
@@ -37,8 +38,6 @@ while [ "$#" -gt 0 ]; do
         --iothub-connstring)       PCS_IOTHUB_CONNSTRING="$2" ;;
         --docdb-name)              PCS_DOCDB_NAME="$2" ;;
         --docdb-connstring)        PCS_STORAGEADAPTER_DOCUMENTDB_CONNSTRING="$2" ;;
-        --storage-sku)             PCS_STORAGE_SKU="$2" ;;
-        --storage-endpoint-suffix) PCS_STORAGE_ENDPOINT_SUFFIX="$2" ;;
         --ssl-certificate)         PCS_CERTIFICATE="$2" ;;
         --ssl-certificate-key)     PCS_CERTIFICATE_KEY="$2" ;;
         --auth-audience)           PCS_AUTH_AUDIENCE="$2" ;;
@@ -49,15 +48,36 @@ while [ "$#" -gt 0 ]; do
         --aad-instance)            PCS_WEBUI_AUTH_AAD_INSTANCE="$2" ;;
         --deployment-id)           PCS_DEPLOYMENT_ID="$2" ;;
         --diagnostics-url)         PCS_DIAGNOSTICS_ENDPOINT_URL="$2" ;;
-        --release-version)         PCS_RELEASE_VERSION="$2" ;;
         --docker-tag)              PCS_DOCKER_TAG="$2" ;;
     esac
     shift
 done
 
-REPOSITORY= "https://raw.githubusercontent.com/Azure/pcs-cli/${PCS_RELEASE_VERSION}/solutions/devicesimulation-nohub/single-vm"
-SCRIPTS_URL="${REPOSITORY}/scripts/"
-SETUP_URL="${REPOSITORY}/setup/"
+SCRIPTS_URL="${PCS_SOLUTION_SETUP_URL}/single-vm/scripts/"
+SETUP_URL="${PCS_SOLUTION_SETUP_URL}/single-vm/setup/"
+
+# ========================================================================
+
+### Install Docker
+
+install_docker_ce() {
+    # Remove old packages if installed
+    set +e
+    apt-get remove docker docker-engine docker.io
+    set -e
+    # Install Docker's GPG key
+    apt-get -y --force-yes --no-install-recommends install apt-transport-https ca-certificates curl gnupg2 software-properties-common
+    curl -fsSL https://download.docker.com/linux/$(. /etc/os-release; echo "$ID")/gpg | sudo apt-key add -
+    # Add Docker repository
+    add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/$(. /etc/os-release; echo "$ID") $(lsb_release -cs) stable"
+    apt-get update
+    # Install
+    apt-get -y install docker-ce docker-compose
+    # Test
+    docker run --rm hello-world && docker rmi hello-world
+}
+
+install_docker_ce
 
 # ========================================================================
 
@@ -89,7 +109,7 @@ cd ${APP_PATH}
 
 # Docker compose file
 
-DOCKERCOMPOSE_SOURCE="${REPOSITORY}/docker-compose.yml"
+DOCKERCOMPOSE_SOURCE="${PCS_SOLUTION_SETUP_URL}/single-vm/docker-compose.yml"
 wget $DOCKERCOMPOSE_SOURCE -O ${DOCKERCOMPOSE}
 sed -i 's/${PCS_DOCKER_TAG}/'${PCS_DOCKER_TAG}'/g' ${DOCKERCOMPOSE}
 

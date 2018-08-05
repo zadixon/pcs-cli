@@ -1,7 +1,34 @@
 {
-    "$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json",
-    "contentVersion": "1.0.0.0",
+  "$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json",
+  "contentVersion": "1.0.0.0",
   "parameters": {
+    "solutionTemplateRepository": {
+      "type": "string",
+      "defaultValue": "https://raw.githubusercontent.com/Azure/pcs-cli/1M/solutions/devicesimulation-xl",
+      "metadata": {
+        "description": "The root folder where ARM template (armtemplate folder) and setup scripts (single-vm folder) will be downloaded from during the VM setup."
+      }
+    },
+    "solutionDockerTag": {
+      "type": "string",
+      "defaultValue": "devis",
+      "metadata": {
+        "description": "The docker tag can be same as release version and is the latest released docker image. The value is used to generate the docker-compose.yml file during the VM setup."
+      }
+    },
+    "solutionName": {
+      "type": "string",
+      "metadata": {
+        "description": "The name of the solution"
+      }
+    },
+    "solutionType": {
+      "type": "string",
+      "defaultValue": "DeviceSimulationV1",
+      "metadata": {
+        "description": "The type of the solution"
+      }
+    },
     "aadTenantId": {
       "type": "string",
       "defaultValue": "novalue",
@@ -23,101 +50,16 @@
         "description": "AAD application identifier (GUID)"
       }
     },
-    "solutionName": {
-      "type": "string",
-      "metadata": {
-        "description": "The name of the solution"
-      }
-    },
-    "solutionType": {
-      "type": "string",
-      "defaultValue": "DeviceSimulationV1",
-      "metadata": {
-        "description": "The type of the solution"
-      }
-    },
-    "storageName": {
-      "type": "string",
-      "defaultValue": "[concat('storage', take(uniqueString(subscription().subscriptionId, resourceGroup().id, parameters('solutionName')), 5))]",
-      "metadata": {
-        "description": "The name of the storageAccount"
-      }
-    },
-    "storageSkuName": {
-      "type": "string",
-      "defaultValue": "Standard_LRS",
-      "allowedValues": [
-        "Standard_LRS",
-        "Standard_GRS",
-        "Standard_RAGRS",
-        "Standard_ZRS",
-        "Premium_LRS"
-      ],
-      "metadata": {
-        "description": "The storage SKU name"
-      }
-    },
-    "storageEndpointSuffix": {
-      "type": "string",
-      "defaultValue": "core.windows.net",
-      "allowedValues": [
-        "core.windows.net",
-        "core.chinacloudapi.cn",
-        "core.cloudapi.de"
-      ],
-      "metadata": {
-        "description": "Suffix added to Azure Storage hostname"
-      }
-    },
-    "documentDBName": {
-      "type": "string",
-      "defaultValue": "[concat('documentdb-', take(uniqueString(subscription().subscriptionId, resourceGroup().id, parameters('solutionName')), 5))]",
-      "metadata": {
-        "description": "The name of the CosmosDB"
-      }
-    },
-    "docDBConsistencyLevel": {
-      "type": "string",
-      "allowedValues": [
-        "Strong",
-        "BoundedStaleness",
-        "Session",
-        "ConsistentPrefix",
-        "Eventual"
-      ],
-      "defaultValue": "Strong",
-      "metadata": {
-        "description": "The CosmosDB default consistency level for this account."
-      }
-    },
-    "docDBMaxStalenessPrefix": {
-      "type": "int",
-      "minValue": 10,
-      "maxValue": 1000,
-      "defaultValue": 10,
-      "metadata": {
-        "description": "When CosmosDB consistency level is set to BoundedStaleness, then this value is required, otherwise it can be ignored."
-      }
-    },
-    "docDBMaxIntervalInSeconds": {
-      "type": "int",
-      "minValue": 5,
-      "maxValue": 600,
-      "defaultValue": 5,
-      "metadata": {
-        "description": "When CosmosDB consistency level is set to BoundedStaleness, then this value is required, otherwise it can be ignored."
-      }
-    },
     "iotHubName": {
       "type": "string",
       "defaultValue": "[concat('iothub-', take(uniqueString(subscription().subscriptionId, resourceGroup().id, parameters('solutionName')), 5))]",
       "metadata": {
-        "description": "The name of Azure IoT Hub"
+        "description": "The name of Azure IoT Hub instance."
       }
     },
     "iotHubSku": {
       "type": "string",
-      "defaultValue": "S2",
+      "defaultValue": "S3",
       "allowedValues": [ "F1", "S1", "S2", "S3" ],
       "metadata": {
         "description": "The Azure IoT Hub SKU"
@@ -133,54 +75,78 @@
     },
     "iotHubUnits": {
       "type": "int",
+      "defaultValue": 1,
       "minValue": 1,
       "maxValue": 100,
-      "defaultValue": 1,
       "metadata": {
         "description": "The number of IoT Hub units created"
       }
     },
-    "vmName": {
+    "cosmosDbSqlName": {
       "type": "string",
-      "defaultValue": "[concat('vm-', take(uniqueString(subscription().subscriptionId, resourceGroup().id, parameters('solutionName')), 5))]",
+      "defaultValue": "[concat('documentdb-', take(uniqueString(subscription().subscriptionId, resourceGroup().id, parameters('solutionName')), 5))]",
       "metadata": {
-        "description": "The name of the Linux Virtual Machine"
+        "description": "The name of the CosmosDB"
       }
     },
-    "vmSize": {
+    "cosmosDbSqlConsistencyLevel": {
       "type": "string",
-      "defaultValue": "Standard_F4",
-      "allowedValues": [],
+      "defaultValue": "Strong",
+      "allowedValues": [
+        "Strong",
+        "BoundedStaleness",
+        "Session",
+        "ConsistentPrefix",
+        "Eventual"
+      ],
       "metadata": {
-        "description": "The size of the Virtual Machine."
+        "description": "The CosmosDB default consistency level for this account."
       }
     },
-    "ubuntuOSVersion": {
-      "type": "string",
-      "defaultValue": "16.04.0-LTS",
-      "allowedValues": [ "12.04.5-LTS", "14.04.5-LTS", "15.10", "16.04.0-LTS" ],
+    "cosmosDbSqlMaxStalenessPrefix": {
+      "type": "int",
+      "defaultValue": 10,
+      "minValue": 10,
+      "maxValue": 1000,
       "metadata": {
-        "description": "The Ubuntu version for the Virtual Machine."
+        "description": "When CosmosDB consistency level is set to BoundedStaleness, then this value is required, otherwise it can be ignored."
+      }
+    },
+    "cosmosDbSqlMaxIntervalInSeconds": {
+      "type": "int",
+      "defaultValue": 5,
+      "minValue": 5,
+      "maxValue": 600,
+      "metadata": {
+        "description": "When CosmosDB consistency level is set to BoundedStaleness, then this value is required, otherwise it can be ignored."
       }
     },
     "adminUsername": {
       "type": "string",
-      "defaultValue": "azureuser",
+      "defaultValue": "user",
       "metadata": {
-        "description": "User name for the Linux Virtual Machine."
+        "description": "Admin username on all VMs."
       }
     },
     "adminPassword": {
       "type": "securestring",
+      "defaultValue": "GEN-PASSWORD",
       "metadata": {
-        "description": "User password for the Linux Virtual Machines, must between 12 and 72 characters long and have 3 of the following: 1 uppercase character, 1 lowercase character, 1 number and 1 special character that is not slash (\\) or dash (-)"
+        "description": "Admin password on all VMs. Must between 12 and 72 characters long and have 3 of the following: 1 uppercase character, 1 lowercase character, 1 number and 1 special character that is not slash (\\) or dash (-)."
+      }
+    },
+    "vmSku": {
+      "type": "string",
+      "defaultValue": "Standard_F4",
+      "metadata": {
+        "description": "Size of VMs in the VM Scale Set."
       }
     },
     "vmSetupScriptUri": {
       "type": "string",
-      "defaultValue": "[concat('https://raw.githubusercontent.com/Azure/pcs-cli/', parameters('pcsReleaseVersion'), '/solutions/devicesimulation/single-vm/setup.sh')]",
+      "defaultValue": "[concat(parameters('solutionTemplateRepository'), '/single-vm/setup.sh')]",
       "metadata": {
-        "description": "The URL of the script to setup a single VM deployment"
+        "description": "The URL of the script used for VM setup"
       }
     },
     "vmFQDNSuffix": {
@@ -192,19 +158,20 @@
         "cloudapp.azure.de"
       ]
     },
-    "pcsReleaseVersion": {
+    "vmssName": {
       "type": "string",
-      "defaultValue": "DS-1.0.1",
       "metadata": {
-        "description": "The release version is used for repoURL for reverse-proxy-dotnet and vmScriptUri"
-      }
+        "description": "String used as a base for naming resources (9 characters or less). A hash is prepended to this string for some resources, and resource-specific information is appended."
+      },
+      "maxLength": 9
     },
-    "pcsDockerTag": {
-      "type": "string",
-      "defaultValue": "millenium",
+    "vmssInstanceCount": {
+      "type": "int",
+      "defaultValue": 2,
       "metadata": {
-        "description": "The docker tag can be same as release version and is the latest released docker image"
-      }
+        "description": "Number of VM instances."
+      },
+      "maxValue": 100
     },
     "azureWebsiteName": {
       "type": "string",
@@ -214,10 +181,10 @@
     },
     "remoteEndpointSSLThumbprint": {
       "type": "securestring",
+      "defaultValue": "secretkey",
       "metadata": {
         "description": "This is the thumbprint of the HTTPS SSL Certificate"
-      },
-      "defaultValue": "secretkey"
+      }
     },
     "remoteEndpointCertificate": {
       "type": "securestring",
@@ -231,7 +198,7 @@
         "description": "The certificate key that needs to be uploaded to the VM"
       }
     },
-    "domain": {
+    "subscriptionDomain": {
       "type": "string",
       "metadata": {
         "description": "The Azure Active Directory domain used by the Azure Subscription where the solution is deployed"
@@ -239,417 +206,422 @@
     },
     "subscriptionId": {
       "type": "string",
+      "defaultValue": "[subscription().subscriptionId]",
       "metadata": {
         "description": "ID of the Azure Subscription where the solution is deployed"
       }
     },
     "deploymentId": {
       "type": "string",
+      "defaultValue": "Undefined",
       "metadata": {
         "description": "Unique Id of the deployment."
-      },
-      "defaultValue": "Undefined"
+      }
     },
     "diagnosticsEndpointUrl": {
       "type": "string",
+      "defaultValue": "Undefined",
       "metadata": {
         "description": "Diagnostics service endpoint url"
-      },
-      "defaultValue": "Undefined"
+      }
     }
   },
-    "variables": {
-        "location": "[resourceGroup().location]",
-        "documentDBApiVersion": "2016-03-19",
-        "documentDBResourceId": "[resourceId('Microsoft.DocumentDb/databaseAccounts', parameters('documentDBName'))]",
-        "iotHubApiVersion": "2017-01-19",
-        "iotHubResourceId": "[resourceId('Microsoft.Devices/Iothubs', parameters('iotHubName'))]",
-        "iotHubKeyName": "iothubowner",
-        "iotHubKeyResource": "[resourceId('Microsoft.Devices/Iothubs/Iothubkeys', parameters('iotHubName'), variables('iotHubKeyName'))]",
-        "storageApiVersion": "2017-06-01",
-        "storageResourceId": "[resourceId('Microsoft.Storage/storageAccounts/',  parameters('storageName'))]",
-        "computeApiVersion": "2017-03-30",
-        "vmFQDN": "[concat(parameters('vmName'), '.', variables('location'), '.', parameters('vmFQDNSuffix'))]",
-        "vmImagePublisher": "Canonical",
-        "vmImageOffer": "UbuntuServer",
-        "vmStorageAccountContainerName": "vhds",
-        "osDiskName": "[concat(parameters('solutionName'), '-osdisk')]",
-        "networkApiVersion": "2017-06-01",
-        "vnetName": "[concat(parameters('solutionName'), '-vnet')]",
-        "vnetResourceId": "[resourceId('Microsoft.Network/virtualNetworks',variables('vnetName'))]",
-        "vnetAddressPrefix": "10.0.0.0/16",
-        "networkSecurityGroupName": "[concat(parameters('solutionName'), '-nsg')]",
-        "subnetName": "default",
-        "subnetPrefix": "10.0.0.0/24",
-        "subnetResourceId": "[concat(variables('vnetResourceId'),'/subnets/',variables('subnetName'))]",
-        "publicIPName": "[concat(parameters('solutionName'), '-public-ip')]",
-        "nicName": "[concat(parameters('solutionName'), '-nic')]",
-        "appServiceSku": "S1",
-        "appServiceCapacity": "1",
-        "webAppRepoURL": "https://github.com/Azure/reverse-proxy-dotnet.git",
-        "webAppRepoBranch": "master",
-        "webAppName": "[parameters('azureWebsiteName')]"
+  "variables": {
+    "osType": {
+      "publisher": "Canonical",
+      "offer": "UbuntuServer",
+      "sku": "18.04-LTS",
+      "version": "latest"
     },
-    "resources": [
-        {
-            "comments": "Azure IoT Hub",
-            "apiVersion": "[variables('iotHubApiVersion')]",
-            "type": "Microsoft.Devices/Iothubs",
-            "name": "[parameters('iotHubName')]",
-            "location": "[variables('location')]",
-            "sku": {
-                "name": "[parameters('iotHubSku')]",
-                "tier": "[parameters('iotHubTier')]",
-                "capacity": "[parameters('iotHubUnits')]"
+    "imageReference": "[variables('osType')]",
+    "appServiceSku": "S1",
+    "appServiceCapacity": "1",
+    "webAppRepoURL": "https://github.com/Azure/reverse-proxy-dotnet.git",
+    "webAppRepoBranch": "master",
+    "webAppName": "[parameters('azureWebsiteName')]",
+    "iotHubApiVersion": "2017-01-19",
+    "iotHubResourceId": "[resourceId('Microsoft.Devices/Iothubs', parameters('iotHubName'))]",
+    "iotHubKeyName": "iothubowner",
+    "iotHubKeyResource": "[resourceId('Microsoft.Devices/Iothubs/Iothubkeys', parameters('iotHubName'), variables('iotHubKeyName'))]",
+    "cosmosDBApiVersion": "2016-03-19",
+    "cosmosDBResourceId": "[resourceId('Microsoft.DocumentDb/databaseAccounts', parameters('cosmosDbSqlName'))]",
+    "location": "[resourceGroup().location]",
+    "addressPrefix": "10.0.0.0/16",
+    "subnetPrefix": "10.0.0.0/24",
+    "virtualNetworkName": "[concat(parameters('vmssName'), 'vnet')]",
+    "subnetName": "[concat(parameters('vmssName'), 'subnet')]",
+    "publicIPAddressName": "[concat(parameters('vmssName'), 'publicIP')]",
+    "publicIPAddressID": "[resourceId('Microsoft.Network/publicIPAddresses',variables('publicIPAddressName'))]",
+    "natPoolName": "[concat(parameters('vmssName'), 'natpool')]",
+    "backendPoolName": "[concat(parameters('vmssName'), 'bepool')]",
+    "natStartPort": 50000,
+    "natEndPort": 50120,
+    "natBackendPort": 22,
+    "nicName": "[concat(parameters('vmssName'), 'nic')]",
+    "ipConfigName": "[concat(parameters('vmssName'), 'ipconfig')]",
+    "loadBalancerName": "[concat(parameters('vmssName'), 'lb')]",
+    "loadBalancerID": "[resourceId('Microsoft.Network/loadBalancers',variables('loadBalancerName'))]",
+    "frontEndIPConfigID": "[concat(variables('loadBalancerID'),'/frontendIPConfigurations/loadBalancerFrontEnd')]",
+    "networkSecurityGroupName": "[concat(parameters('solutionName'), '-nsg')]",
+    "networkApiVersion": "2017-04-01"
+  },
+  "resources": [
+    {
+      "comments": "Azure IoT Hub",
+      "apiVersion": "[variables('iotHubApiVersion')]",
+      "type": "Microsoft.Devices/Iothubs",
+      "name": "[parameters('iotHubName')]",
+      "location": "[variables('location')]",
+      "sku": {
+        "name": "[parameters('iotHubSku')]",
+        "tier": "[parameters('iotHubTier')]",
+        "capacity": "[parameters('iotHubUnits')]"
+      },
+      "properties": {
+        "location": "[variables('location')]"
+      },
+      "tags": {
+        "IotSuiteType": "[parameters('solutionType')]"
+      }
+    },
+    {
+      "comments": "Azure CosmosDB",
+      "apiVersion": "[variables('cosmosDBApiVersion')]",
+      "type": "Microsoft.DocumentDb/databaseAccounts",
+      "name": "[parameters('cosmosDbSqlName')]",
+      "location": "[variables('location')]",
+      "properties": {
+        "name": "[parameters('cosmosDbSqlName')]",
+        "databaseAccountOfferType": "standard",
+        "consistencyPolicy": {
+          "defaultConsistencyLevel": "[parameters('cosmosDbSqlConsistencyLevel')]",
+          "maxStalenessPrefix": "[parameters('cosmosDbSqlMaxStalenessPrefix')]",
+          "maxIntervalInSeconds": "[parameters('cosmosDbSqlMaxIntervalInSeconds')]"
+        }
+      },
+      "tags": {
+        "IotSuiteType": "[parameters('solutionType')]"
+      }
+    },
+    {
+      "comments": "AppService plan to host the Application Gateway Web App",
+      "type": "Microsoft.Web/serverfarms",
+      "sku": {
+        "name": "[variables('appServiceSku')]",
+        "capacity": "[variables('appServiceCapacity')]"
+      },
+      "name": "[variables('webAppName')]",
+      "apiVersion": "2015-08-01",
+      "location": "[resourceGroup().location]",
+      "properties": {
+        "name": "[variables('webAppName')]"
+      },
+      "tags": {
+        "IotSuiteType": "[parameters('solutionType')]"
+      }
+    },
+    {
+      "comments": "Application Gateway Web App",
+      "type": "Microsoft.Web/sites",
+      "name": "[parameters('azureWebsiteName')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Web/serverfarms', variables('webAppName'))]"
+      ],
+      "apiVersion": "2015-08-01",
+      "location": "[resourceGroup().location]",
+      "properties": {
+        "enabled": true,
+        "clientAffinityEnabled": false,
+        "serverFarmId": "[variables('webAppName')]",
+        "siteConfig": {
+          "appSettings": [
+            {
+              "name": "REMOTE_ENDPOINT",
+              "value": "[concat('https://', reference(variables('publicIPAddressName')).dnsSettings.fqdn)]"
             },
-            "properties": {
-                "location": "[variables('location')]"
-            },
-            "tags": {
-                "IotSuiteType": "[parameters('solutionType')]"
+            {
+              "name": "REMOTE_ENDPOINT_SSL_THUMBPRINT",
+              "value": "[parameters('remoteEndpointSSLThumbprint')]"
             }
-        },
+          ]
+        }
+      },
+      "resources": [
         {
-            "comments": "Azure CosmosDB",
-            "apiVersion": "[variables('documentDBApiVersion')]",
-            "type": "Microsoft.DocumentDb/databaseAccounts",
-            "name": "[parameters('documentDBName')]",
-            "location": "[variables('location')]",
+          "type": "sourcecontrols",
+          "name": "web",
+          "apiVersion": "2015-08-01",
+          "properties": {
+            "RepoUrl": "[variables('webAppRepoURL')]",
+            "branch": "[variables('webAppRepoBranch')]",
+            "IsManualIntegration": true
+          },
+          "dependsOn": [
+            "[resourceId('Microsoft.Web/Sites', parameters('azureWebsiteName'))]"
+          ]
+        }
+      ],
+      "tags": {
+        "IotSuiteType": "[parameters('solutionType')]"
+      }
+    },
+    {
+      "comments": "Security rules used for the VM network interface",
+      "type": "Microsoft.Network/networkSecurityGroups",
+      "name": "[variables('networkSecurityGroupName')]",
+      "apiVersion": "[variables('networkApiVersion')]",
+      "location": "[variables('location')]",
+      "properties": {
+        "securityRules": [
+          {
+            "name": "HTTPS",
             "properties": {
-                "name": "[parameters('documentDBName')]",
-                "databaseAccountOfferType": "standard",
-                "consistencyPolicy": {
-                    "defaultConsistencyLevel": "[parameters('docDBConsistencyLevel')]",
-                    "maxStalenessPrefix": "[parameters('docDBMaxStalenessPrefix')]",
-                    "maxIntervalInSeconds": "[parameters('docDBMaxIntervalInSeconds')]"
-                }
-            },
-            "tags": {
-                "IotSuiteType": "[parameters('solutionType')]"
+              "protocol": "TCP",
+              "sourcePortRange": "*",
+              "destinationPortRange": "443",
+              "sourceAddressPrefix": "*",
+              "destinationAddressPrefix": "*",
+              "access": "Allow",
+              "priority": 100,
+              "direction": "Inbound"
             }
-        },
-        {
-            "comments": "AppService plan to host the Application Gateway Web App",
-            "type": "Microsoft.Web/serverfarms",
-            "sku": {
-                "name": "[variables('appServiceSku')]",
-                "capacity": "[variables('appServiceCapacity')]"
-            },
-            "name": "[variables('webAppName')]",
-            "apiVersion": "2015-08-01",
-            "location": "[resourceGroup().location]",
+          },
+          {
+            "name": "SSH",
             "properties": {
-                "name": "[variables('webAppName')]"
-            },
-            "tags": {
-                "IotSuiteType": "[parameters('solutionType')]"
+              "protocol": "TCP",
+              "sourcePortRange": "*",
+              "destinationPortRange": "22",
+              "sourceAddressPrefix": "*",
+              "destinationAddressPrefix": "*",
+              "access": "Deny",
+              "priority": 101,
+              "direction": "Inbound"
             }
-        },
-        {
-            "comments": "Application Gateway Web App",
-            "type": "Microsoft.Web/sites",
-            "name": "[parameters('azureWebsiteName')]",
-            "dependsOn": [
-                "[resourceId('Microsoft.Web/serverfarms', variables('webAppName'))]"
-            ],
-            "apiVersion": "2015-08-01",
-            "location": "[resourceGroup().location]",
+          },
+          {
+            "name": "SSH_alt",
             "properties": {
-                "enabled": true,
-                "clientAffinityEnabled": false,
-                "serverFarmId": "[variables('webAppName')]",
-                "siteConfig": {
-                    "appSettings": [
-                        {
-                            "name": "REMOTE_ENDPOINT",
-                            "value": "[concat('https://', reference(variables('publicIPName')).dnsSettings.fqdn)]"
-                        },
-                        {
-                            "name": "REMOTE_ENDPOINT_SSL_THUMBPRINT",
-                            "value": "[parameters('remoteEndpointSSLThumbprint')]"
-                        }
-                    ]
-                }
-            },
-            "resources": [
-                {
-                    "type": "sourcecontrols",
-                    "name": "web",
-                    "apiVersion": "2015-08-01",
-                    "properties": {
-                        "RepoUrl": "[variables('webAppRepoURL')]",
-                        "branch": "[variables('webAppRepoBranch')]",
-                        "IsManualIntegration": true
-                    },
-                    "dependsOn": [
-                        "[resourceId('Microsoft.Web/Sites', parameters('azureWebsiteName'))]"
-                    ]
-                }
-            ],
-            "tags": {
-                "IotSuiteType": "[parameters('solutionType')]"
+              "protocol": "TCP",
+              "sourcePortRange": "*",
+              "destinationPortRange": "10022",
+              "sourceAddressPrefix": "*",
+              "destinationAddressPrefix": "*",
+              "access": "Deny",
+              "priority": 102,
+              "direction": "Inbound"
             }
-        },
-        {
-            "comments": "Security rules used for the VM network interface",
-            "type": "Microsoft.Network/networkSecurityGroups",
-            "name": "[variables('networkSecurityGroupName')]",
-            "apiVersion": "[variables('networkApiVersion')]",
-            "location": "[variables('location')]",
-            "tags": {
-                "IotSuiteType": "[parameters('solutionType')]"
-            },
+          }
+        ]
+      },
+      "tags": {
+        "IotSuiteType": "[parameters('solutionType')]"
+      }
+    },
+    {
+      "comments": "VM load balancer IP",
+      "type": "Microsoft.Network/publicIPAddresses",
+      "name": "[variables('publicIPAddressName')]",
+      "location": "[variables('location')]",
+      "apiVersion": "2017-04-01",
+      "properties": {
+        "publicIPAllocationMethod": "Dynamic",
+        "dnsSettings": {
+          "domainNameLabel": "[parameters('vmssName')]"
+        }
+      },
+      "tags": {
+        "IotSuiteType": "[parameters('solutionType')]"
+      }
+    },
+    {
+      "comments": "VM load balancer",
+      "type": "Microsoft.Network/loadBalancers",
+      "name": "[variables('loadBalancerName')]",
+      "location": "[variables('location')]",
+      "apiVersion": "2017-04-01",
+      "dependsOn": [
+        "[concat('Microsoft.Network/publicIPAddresses/', variables('publicIPAddressName'))]"
+      ],
+      "properties": {
+        "frontendIPConfigurations": [
+          {
+            "name": "LoadBalancerFrontEnd",
             "properties": {
-                "securityRules": [
-                    {
-                        "name": "HTTPS",
-                        "properties": {
-                            "protocol": "TCP",
-                            "sourcePortRange": "*",
-                            "destinationPortRange": "443",
-                            "sourceAddressPrefix": "*",
-                            "destinationAddressPrefix": "*",
-                            "access": "Allow",
-                            "priority": 100,
-                            "direction": "Inbound"
-                        }
-                    },
-                    {
-                        "name": "SSH",
-                        "properties": {
-                            "protocol": "TCP",
-                            "sourcePortRange": "*",
-                            "destinationPortRange": "22",
-                            "sourceAddressPrefix": "*",
-                            "destinationAddressPrefix": "*",
-                            "access": "Deny",
-                            "priority": 101,
-                            "direction": "Inbound"
-                        }
-                    }
-                ]
-            }
-        },
-        {
-            "type": "Microsoft.Network/virtualNetworks",
-            "name": "[variables('vnetName')]",
-            "apiVersion": "[variables('networkApiVersion')]",
-            "location": "[variables('location')]",
-            "properties": {
-                "addressSpace": {
-                    "addressPrefixes": [
-                        "[variables('vnetAddressPrefix')]"
-                    ]
-                },
-                "subnets": [
-                    {
-                        "name": "[variables('subnetName')]",
-                        "properties": {
-                            "addressPrefix": "[variables('subnetPrefix')]"
-                        }
-                    }
-                ]
-            },
-            "tags": {
-                "IotSuiteType": "[parameters('solutionType')]"
-            }
-        },
-        {
-            "comments": "Public IP address used for the VM",
-            "type": "Microsoft.Network/publicIPAddresses",
-            "name": "[variables('publicIPName')]",
-            "apiVersion": "2016-03-30",
-            "location": "[variables('location')]",
-            "properties": {
-                "publicIPAllocationMethod": "Dynamic",
-                "dnsSettings": {
-                    "domainNameLabel": "[toLower(parameters('vmName'))]"
-                },
-                "idleTimeoutInMinutes": 4
-            },
-            "tags": {
-                "IotSuiteType": "[parameters('solutionType')]"
-            }
-        },
-        {
-            "comments": "Network interface used by the VM",
-            "type": "Microsoft.Network/networkInterfaces",
-            "name": "[variables('nicName')]",
-            "dependsOn": [
-                "[resourceId('Microsoft.Network/virtualNetworks', variables('vnetName'))]",
-                "[resourceId('Microsoft.Network/publicIPAddresses', variables('publicIPName'))]",
-                "[resourceId('Microsoft.Network/networkSecurityGroups', variables('networkSecurityGroupName'))]"
-            ],
-            "apiVersion": "[variables('networkApiVersion')]",
-            "location": "[variables('location')]",
-            "properties": {
-                "ipConfigurations": [
-                    {
-                        "name": "ipconfig1",
-                        "properties": {
-                            "privateIPAddress": "10.0.0.4",
-                            "privateIPAllocationMethod": "Dynamic",
-                            "publicIPAddress": {
-                                "id": "[resourceId('Microsoft.Network/publicIPAddresses', variables('publicIPName'))]"
-                            },
-                            "subnet": {
-                                "id": "[variables('subnetResourceId')]"
-                            }
-                        }
-                    }
-                ],
-                "networkSecurityGroup": {
-                    "id": "[resourceId('Microsoft.Network/networkSecurityGroups', variables('networkSecurityGroupName'))]"
-                }
-            },
-            "tags": {
-                "IotSuiteType": "[parameters('solutionType')]"
-            }
-        },
-        {
-            "comments": "Storage account used to store the VM disk",
-            "type": "Microsoft.Storage/storageAccounts",
-            "name": "[parameters('storageName')]",
-            "apiVersion": "[variables('storageApiVersion')]",
-            "location": "[variables('location')]",
-            "kind": "Storage",
-            "sku": {
-                "name": "[parameters('storageSkuName')]"
-            },
-            "tags": {
-                "IotSuiteType": "[parameters('solutionType')]"
-            }
-        },
-        {
-            "comments": "VM running the microservices",
-            "type": "Microsoft.Compute/virtualMachines",
-            "name": "[parameters('vmName')]",
-            "dependsOn": [
-                "[resourceId('Microsoft.Storage/storageAccounts/', parameters('storageName'))]",
-                "[resourceId('Microsoft.Network/networkInterfaces/', variables('nicName'))]"
-            ],
-            "apiVersion": "[variables('computeApiVersion')]",
-            "location": "[variables('location')]",
-            "properties": {
-                "hardwareProfile": {
-                    "vmSize": "[parameters('vmSize')]"
-                },
-                "osProfile": {
-                    "computerName": "[parameters('vmName')]",
-                    "adminUsername": "[parameters('adminUsername')]",
-                    "adminPassword": "[parameters('adminPassword')]"
-                },
-                "storageProfile": {
-                    "imageReference": {
-                        "publisher": "[variables('vmImagePublisher')]",
-                        "offer": "[variables('vmImageOffer')]",
-                        "sku": "[parameters('ubuntuOSVersion')]",
-                        "version": "latest"
-                    },
-                    "osDisk": {
-                        "name": "osdisk1",
-                        "vhd": {
-                            "uri": "[concat('http://',parameters('storageName'),'.blob.',parameters('storageEndpointSuffix'),'/',variables('vmStorageAccountContainerName'),'/',variables('osDiskName'),'.vhd')]"
-                        },
-                        "caching": "ReadWrite",
-                        "createOption": "FromImage"
-                    }
-                },
-                "networkProfile": {
-                    "networkInterfaces": [
-                        {
-                            "id": "[resourceId('Microsoft.Network/networkInterfaces',variables('nicName'))]"
-                        }
-                    ]
-                },
-                "diagnosticsProfile": {
-                    "bootDiagnostics": {
-                        "enabled": "true",
-                        "storageUri": "[concat(reference(concat('Microsoft.Storage/storageAccounts/', parameters('storageName')), '2016-01-01').primaryEndpoints.blob)]"
-                    }
-                }
-            },
-            "tags": {
-                "IotSuiteType": "[parameters('solutionType')]"
-            }
-        },
-        {
-            "comments": "Docker extension used to run the microservices",
-            "type": "Microsoft.Compute/virtualMachines/extensions",
-            "name": "[concat(parameters('vmName'), '/', 'DockerExtension')]",
-            "dependsOn": [
-                "[concat('Microsoft.Compute/virtualMachines/', parameters('vmName'))]"
-            ],
-            "apiVersion": "[variables('computeApiVersion')]",
-            "location": "[variables('location')]",
-            "properties": {
-                "publisher": "Microsoft.Azure.Extensions",
-                "type": "DockerExtension",
-                "typeHandlerVersion": "1.0",
-                "autoUpgradeMinorVersion": true,
-                "settings": {
-                    "azure-environment": "[if(endsWith(reference(concat('Microsoft.Web/sites/', parameters('azureWebsiteName'))).hostNames[0], '.cn'), 'AzureChinaCloud', '')]"
-                }
-            },
-            "tags": {
-                "IotSuiteType": "[parameters('solutionType')]"
-            }
-        },
-        {
-            "comments": "One time script execution to prepare the VM environment",
-            "type": "Microsoft.Compute/virtualMachines/extensions",
-            "name": "[concat(parameters('vmName'), '/', 'scriptextensions')]",
-            "dependsOn": [
-                "[concat('Microsoft.Compute/virtualMachines/', parameters('vmName'))]",
-                "[resourceId('Microsoft.Devices/Iothubs/', parameters('iotHubName'))]",
-                "[resourceId('Microsoft.DocumentDb/databaseAccounts/', parameters('documentDbName'))]",
-                "[resourceId('Microsoft.Compute/virtualMachines/extensions', parameters('vmName'), 'DockerExtension')]"
-            ],
-            "apiVersion": "[variables('computeApiVersion')]",
-            "location": "[variables('location')]",
-            "properties": {
-                "publisher": "Microsoft.Azure.Extensions",
-                "type": "CustomScript",
-                "typeHandlerVersion": "2.0",
-                "autoUpgradeMinorVersion": true,
-                "settings": {
-                    "fileUris": [
-                        "[parameters('vmSetupScriptUri')]"
-                    ]
-                },
-              "protectedSettings": {
-                "commandToExecute": "[concat('sh setup.sh --log-level Info ', ' --hostname ', concat('\"', variables('vmFQDN'), '\"'), ' --docdb-connstring ', concat('\"', 'AccountEndpoint=', reference(variables('documentDBResourceId')).documentEndpoint, ';AccountKey=', listkeys(variables('documentDBResourceId'), variables('documentDBApiVersion')).primaryMasterKey, ';', '\"'), ' --ssl-certificate ', concat('\"', parameters('remoteEndpointCertificate'), '\"'), ' --ssl-certificate-key ', concat('\"', parameters('remoteEndpointCertificateKey'), '\"'), ' --auth-type aad ', ' --auth-audience ', concat('\"', parameters('aadClientId'), '\"'), ' --aad-appid ', concat('\"', parameters('aadClientId'), '\"'), ' --aad-tenant ', concat('\"', parameters('aadTenantId'), '\"'), ' --auth-issuer ', concat('\"https://sts.windows.net/', parameters('aadTenantId'), '/\"'), ' --aad-instance ', concat('\"', parameters('aadInstance'), '\"'), ' --resource-group ', concat('\"', parameters('solutionName'), '\"'), ' --solution-type ', concat('\"', parameters('solutionType'), '\"'), ' --deployment-id ', concat('\"', parameters('deploymentId'), '\"'),  ' --diagnostics-url ', concat('\"', parameters('diagnosticsEndpointUrl'), '\"'), ' --storage-sku ', concat('\"', parameters('storageSkuName'), '\"'), ' --storage-endpoint-suffix ', concat('\"', parameters('storageEndpointSuffix'), '\"'), ' --docdb-name ', concat('\"', parameters('documentDBName'), '\"'), ' --solution-name ', concat('\"', parameters('solutionName'), '\"'), ' --release-version ', concat('\"', parameters('pcsReleaseVersion'), '\"'), ' --docker-tag ', concat('\"', parameters('pcsDockerTag'), '\"'),' --subscription-domain ', concat('\"', parameters('domain'), '\"'), ' --subscription-id ', concat('\"', parameters('subscriptionId'), '\"', ' --iothub-name ', concat('\"', parameters('iotHubName'), '\"'), ' --iothub-sku ', parameters('iotHubSku'), ' --iothub-tier ', parameters('iotHubTier'), ' --iothub-units ', parameters('iotHubUnits') ,' --iothub-connstring ', concat('\"', 'HostName=', reference(variables('iotHubResourceId')).hostName, ';SharedAccessKeyName=', variables('iotHubKeyName'), ';SharedAccessKey=', listkeys(variables('iotHubKeyResource'), variables('iotHubApiVersion')).primaryKey, '\"')))]"
+              "publicIPAddress": {
+                "id": "[variables('publicIPAddressID')]"
               }
-            },
-            "tags": {
-                "IotSuiteType": "[parameters('solutionType')]"
             }
+          }
+        ],
+        "backendAddressPools": [
+          {
+            "name": "[variables('backendPoolName')]"
+          }
+        ],
+        "inboundNatPools": [
+          {
+            "name": "[variables('natPoolName')]",
+            "properties": {
+              "frontendIPConfiguration": {
+                "id": "[variables('frontEndIPConfigID')]"
+              },
+              "protocol": "tcp",
+              "frontendPortRangeStart": "[variables('natStartPort')]",
+              "frontendPortRangeEnd": "[variables('natEndPort')]",
+              "backendPort": "[variables('natBackendPort')]"
+            }
+          }
+        ]
+      },
+      "tags": {
+        "IotSuiteType": "[parameters('solutionType')]"
+      }
+    },
+    {
+      "comments": "Virtual machines network",
+      "type": "Microsoft.Network/virtualNetworks",
+      "name": "[variables('virtualNetworkName')]",
+      "location": "[variables('location')]",
+      "apiVersion": "2017-04-01",
+      "properties": {
+        "addressSpace": {
+          "addressPrefixes": [
+            "[variables('addressPrefix')]"
+          ]
+        },
+        "subnets": [
+          {
+            "name": "[variables('subnetName')]",
+            "properties": {
+              "addressPrefix": "[variables('subnetPrefix')]"
+            }
+          }
+        ]
+      },
+      "tags": {
+        "IotSuiteType": "[parameters('solutionType')]"
+      }
+    },
+    {
+      "comments": "Virtual machines set",
+      "type": "Microsoft.Compute/virtualMachineScaleSets",
+      "name": "[parameters('vmssName')]",
+      "location": "[variables('location')]",
+      "apiVersion": "2017-03-30",
+      "dependsOn": [
+        "[concat('Microsoft.Network/loadBalancers/', variables('loadBalancerName'))]",
+        "[concat('Microsoft.Network/virtualNetworks/', variables('virtualNetworkName'))]"
+      ],
+      "sku": {
+        "name": "[parameters('vmSku')]",
+        "tier": "Standard",
+        "capacity": "[parameters('vmssInstanceCount')]"
+      },
+      "properties": {
+        "overprovision": "false",
+        "upgradePolicy": {
+          "mode": "Manual"
+        },
+        "virtualMachineProfile": {
+          "storageProfile": {
+            "osDisk": {
+              "caching": "ReadOnly",
+              "createOption": "FromImage"
+            },
+            "imageReference": "[variables('imageReference')]"
+          },
+          "osProfile": {
+            "computerNamePrefix": "[parameters('vmssName')]",
+            "adminUsername": "[parameters('adminUsername')]",
+            "adminPassword": "[parameters('adminPassword')]"
+          },
+          "networkProfile": {
+            "networkInterfaceConfigurations": [
+              {
+                "name": "[variables('nicName')]",
+                "properties": {
+                  "primary": true,
+                  "ipConfigurations": [
+                    {
+                      "name": "[variables('ipConfigName')]",
+                      "properties": {
+                        "subnet": {
+                          "id": "[concat('/subscriptions/', subscription().subscriptionId,'/resourceGroups/', resourceGroup().name, '/providers/Microsoft.Network/virtualNetworks/', variables('virtualNetworkName'), '/subnets/', variables('subnetName'))]"
+                        },
+                        "publicipaddressconfiguration": {
+                          "name": "pub1",
+                          "properties": {
+                            "idleTimeoutInMinutes": 15
+                          }
+                        },
+                        "loadBalancerBackendAddressPools": [
+                          {
+                            "id": "[concat('/subscriptions/', subscription().subscriptionId,'/resourceGroups/', resourceGroup().name, '/providers/Microsoft.Network/loadBalancers/', variables('loadBalancerName'), '/backendAddressPools/', variables('backendPoolName'))]"
+                          }
+                        ],
+                        "loadBalancerInboundNatPools": [
+                          {
+                            "id": "[concat('/subscriptions/', subscription().subscriptionId,'/resourceGroups/', resourceGroup().name, '/providers/Microsoft.Network/loadBalancers/', variables('loadBalancerName'), '/inboundNatPools/', variables('natPoolName'))]"
+                          }
+                        ]
+                      }
+                    }
+                  ]
+                }
+              }
+            ]
+          },
+          "extensionProfile": {
+            "extensions": [
+              {
+                "name": "filesextension",
+                "properties": {
+                  "publisher": "Microsoft.Azure.Extensions",
+                  "type": "CustomScript",
+                  "typeHandlerVersion": "2.0",
+                  "autoUpgradeMinorVersion": true,
+                  "settings": {
+                    "fileUris": [
+                      "[parameters('vmSetupScriptUri')]"
+                    ],
+                    "commandToExecute": "[concat('sh setup.sh --log-level Info ', ' --hostname ', concat('\"', variables('vmFQDN'), '\"'), ' --docdb-connstring ', concat('\"', 'AccountEndpoint=', reference(variables('cosmosDBResourceId')).documentEndpoint, ';AccountKey=', listkeys(variables('cosmosDBResourceId'), variables('cosmosDBApiVersion')).primaryMasterKey, ';', '\"'), ' --ssl-certificate ', concat('\"', parameters('remoteEndpointCertificate'), '\"'), ' --ssl-certificate-key ', concat('\"', parameters('remoteEndpointCertificateKey'), '\"'), ' --auth-type aad ', ' --auth-audience ', concat('\"', parameters('aadClientId'), '\"'), ' --aad-appid ', concat('\"', parameters('aadClientId'), '\"'), ' --aad-tenant ', concat('\"', parameters('aadTenantId'), '\"'), ' --auth-issuer ', concat('\"https://sts.windows.net/', parameters('aadTenantId'), '/\"'), ' --aad-instance ', concat('\"', parameters('aadInstance'), '\"'), ' --resource-group ', concat('\"', parameters('solutionName'), '\"'), ' --solution-type ', concat('\"', parameters('solutionType'), '\"'), ' --deployment-id ', concat('\"', parameters('deploymentId'), '\"'),  ' --diagnostics-url ', concat('\"', parameters('diagnosticsEndpointUrl'), '\"'), ' --docdb-name ', concat('\"', parameters('cosmosDbSqlName'), '\"'), ' --solution-name ', concat('\"', parameters('solutionName'), '\"'), ' --solution-setup-url ', concat('\"', parameters('solutionTemplateRepository'), '\"'), ' --docker-tag ', concat('\"', parameters('solutionDockerTag'), '\"'),' --subscription-domain ', concat('\"', parameters('subscriptionDomain'), '\"'), ' --subscription-id ', concat('\"', parameters('subscriptionId'), '\"', ' --iothub-name ', concat('\"', parameters('iotHubName'), '\"'), ' --iothub-sku ', parameters('iotHubSku'), ' --iothub-tier ', parameters('iotHubTier'), ' --iothub-units ', parameters('iotHubUnits') ,' --iothub-connstring ', concat('\"', 'HostName=', reference(variables('iotHubResourceId')).hostName, ';SharedAccessKeyName=', variables('iotHubKeyName'), ';SharedAccessKey=', listkeys(variables('iotHubKeyResource'), variables('iotHubApiVersion')).primaryKey, '\"')))]"
+                  }
+                }
+              }
+            ]
+          }
         }
-    ],
-    "outputs": {
-        "resourceGroup" : {
-            "type": "string",
-            "value": "[resourceGroup().name]"
-        },
-        "iotHubConnectionString": {
-            "type": "string",
-            "value": "[concat('HostName=', reference(variables('iotHubResourceId')).hostName, ';SharedAccessKeyName=', variables('iotHubKeyName'), ';SharedAccessKey=', listkeys(variables('iotHubKeyResource'), variables('iotHubApiVersion')).primaryKey)]"
-        },
-        "documentDBConnectionString" : {
-            "type": "string",
-            "value": "[concat('AccountEndpoint=', reference(variables('documentDBResourceId')).documentEndpoint, ';AccountKey=', listkeys(variables('documentDBResourceId'), variables('documentDBApiVersion')).primaryMasterKey, ';')]"
-        },
-        "azureWebsite": {
-            "type": "string",
-            "value": "[concat('https://', reference(concat('Microsoft.Web/sites/', parameters('azureWebsiteName'))).hostNames[0])]"
-        },
-        "vmFQDN": {
-            "type": "string",
-            "value": "[reference(variables('publicIPName')).dnsSettings.fqdn]"
-        },
-        "adminUsername": {
-            "type": "string",
-            "value": "[parameters('adminUsername')]"
-        }
+      },
+      "tags": {
+        "IotSuiteType": "[parameters('solutionType')]"
+      }
     }
+  ],
+  "outputs": {
+    "resourceGroup" : {
+      "type": "string",
+      "value": "[resourceGroup().name]"
+    },
+    "iotHubConnectionString": {
+      "type": "string",
+      "value": "[concat('HostName=', reference(variables('iotHubResourceId')).hostName, ';SharedAccessKeyName=', variables('iotHubKeyName'), ';SharedAccessKey=', listkeys(variables('iotHubKeyResource'), variables('iotHubApiVersion')).primaryKey)]"
+    },
+    "documentDBConnectionString" : {
+      "type": "string",
+      "value": "[concat('AccountEndpoint=', reference(variables('cosmosDBResourceId')).documentEndpoint, ';AccountKey=', listkeys(variables('cosmosDBResourceId'), variables('cosmosDBApiVersion')).primaryMasterKey, ';')]"
+    },
+    "azureWebsite": {
+      "type": "string",
+      "value": "[concat('https://', reference(concat('Microsoft.Web/sites/', parameters('azureWebsiteName'))).hostNames[0])]"
+    },
+    "vmFQDN": {
+      "type": "string",
+      "value": "[reference(variables('publicIPName')).dnsSettings.fqdn]"
+    },
+    "adminUsername": {
+      "type": "string",
+      "value": "[parameters('adminUsername')]"
+    }
+  }
 }
