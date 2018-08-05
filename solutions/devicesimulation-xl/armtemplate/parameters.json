@@ -29,7 +29,7 @@
     "aadClientId": {
       "value": ""
     },
-    "domain": {
+    "subscriptionDomain": {
       "value": ""
     },
     "subscriptionId": {
@@ -38,17 +38,11 @@
     "pcsReleaseVersion": {
       "value": ""
     },
-    "pcsDockerTag": {
-      "value": "devis"
+    "solutionDockerTag": {
+      "value": "testing"
     },
     "vmSetupScriptUri": {
       "value": "https://raw.githubusercontent.com/Azure/pcs-cli/master/solutions/devicesimulation/single-vm/setup.sh"
-    },
-    "vmssName": {
-      "value": "GEN-UNIQUE-32"
-    },
-    "instanceCount": {
-      "value": 3
     }
   }
 }

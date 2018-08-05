@@ -180,8 +180,8 @@
       }
     },
     "remoteEndpointSSLThumbprint": {
-      "type": "securestring",
-      "defaultValue": "secretkey",
+      "type": "string",
+      "defaultValue": "1234567890000000000000000000000000ABCDEF",
       "metadata": {
         "description": "This is the thumbprint of the HTTPS SSL Certificate"
       }
@@ -200,6 +200,7 @@
     },
     "subscriptionDomain": {
       "type": "string",
+      "defaultValue": "microsoft.onmicrosoft.com",
       "metadata": {
         "description": "The Azure Active Directory domain used by the Azure Subscription where the solution is deployed"
       }
@@ -263,7 +264,8 @@
     "loadBalancerID": "[resourceId('Microsoft.Network/loadBalancers',variables('loadBalancerName'))]",
     "frontEndIPConfigID": "[concat(variables('loadBalancerID'),'/frontendIPConfigurations/loadBalancerFrontEnd')]",
     "networkSecurityGroupName": "[concat(parameters('solutionName'), '-nsg')]",
-    "networkApiVersion": "2017-04-01"
+    "networkApiVersion": "2017-04-01",
+    "vmFQDN": "[concat(parameters('vmssName'), '.', variables('location'), '.', parameters('vmFQDNSuffix'))]"
   },
   "resources": [
     {
@@ -617,7 +619,7 @@
     },
     "vmFQDN": {
       "type": "string",
-      "value": "[reference(variables('publicIPName')).dnsSettings.fqdn]"
+      "value": "[reference(variables('publicIPAddressName')).dnsSettings.fqdn]"
     },
     "adminUsername": {
       "type": "string",
