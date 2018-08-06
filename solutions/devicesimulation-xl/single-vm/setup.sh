@@ -205,6 +205,12 @@ wget $SETUP_URL/nanorc -O /tmp/nanorc && cat /tmp/nanorc >> /etc/nanorc
 echo "### CUSTOMIZATIONS ###" >> /etc/bash.bashrc
 wget $SETUP_URL/bashrc -O /tmp/bashrc && cat /tmp/bashrc >> /etc/bash.bashrc
 
+# Optional script to customize Bash shell, to be executed manually by the user
+wget https://aka.ms/bashir-setup -O /etc/bashir-script \
+    && chmod 444 /etc/bashir-script \
+    && echo 'cat /etc/bashir-script | bash && . ~/.bashir && echo "Restart Bash to see the changes (e.g. exit and login again)."' > /usr/local/bin/bashir-setup \
+    && chmod 755 /usr/local/bin/bashir-setup
+
 # ========================================================================
 
 # Auto-start after reboots

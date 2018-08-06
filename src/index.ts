@@ -79,8 +79,8 @@ let answers: Answers = {};
 
 const program = new Command(packageJson.name)
     .version(packageJson.version, '-v, --version')
-    .option('-t, --type <type>', 'Solution Type: remotemonitoring, devicesimulation, devicesimulation-nohub',
-            /^(remotemonitoring|devicesimulation|devicesimulation-nohub|test)$/i,
+    .option('-t, --type <type>', 'Solution Type: remotemonitoring, devicesimulation, devicesimulation-nohub, devicesimulation-xl',
+            /^(remotemonitoring|devicesimulation|devicesimulation-nohub|devicesimulation-xl|test)$/i,
             'remotemonitoring')
     .option('-s, --sku <sku>', 'SKU Type (only for Remote Monitoring): basic, standard, or local', /^(basic|standard|local)$/i, 'basic')
     .option('-e, --environment <environment>',

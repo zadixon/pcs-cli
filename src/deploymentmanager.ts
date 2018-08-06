@@ -402,9 +402,9 @@ export class DeploymentManager implements IDeploymentManager {
         if (this._parameters.microServiceRuntime) {
             this._parameters.microServiceRuntime.value = answers.runtime;
         }
-        if (this._parameters.pcsReleaseVersion) {
-            this._parameters.pcsReleaseVersion.value = answers.version;
-        }
+        // if (this._parameters.pcsReleaseVersion) {
+        //    this._parameters.pcsReleaseVersion.value = answers.version;
+        // }
         if (this._parameters.pcsDockerTag) {
             this._parameters.pcsDockerTag.value = answers.dockerTag;
         }
