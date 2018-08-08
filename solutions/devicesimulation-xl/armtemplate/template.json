@@ -97,6 +97,15 @@
         "description": "The number of IoT Hub units created"
       }
     },
+    "iotHubPartitions": {
+      "type": "int",
+      "defaultValue": 32,
+      "minValue": 2,
+      "maxValue": 32,
+      "metadata": {
+        "description": "The number of partitions in IoT Hub"
+      }
+    },
     "cosmosDbSqlName": {
       "type": "string",
       "defaultValue": "[concat(parameters('resourcesNamePrefix'), 'db')]",
@@ -187,7 +196,7 @@
       "metadata": {
         "description": "Number of VM instances."
       },
-      "maxValue": 100
+      "maxValue": 500
     },
     "azureWebsiteName": {
       "type": "string",
@@ -269,7 +278,7 @@
     "webAppRepoURL": "https://github.com/Azure/reverse-proxy-dotnet.git",
     "webAppRepoBranch": "master",
     "webAppPlanName": "[concat(parameters('azureWebsiteName'), '-plan')]",
-    "iotHubApiVersion": "2017-01-19",
+    "iotHubApiVersion": "2018-04-01",
     "iotHubResourceId": "[resourceId('Microsoft.Devices/Iothubs', parameters('iotHubName'))]",
     "iotHubKeyName": "iothubowner",
     "iotHubKeyResource": "[resourceId('Microsoft.Devices/Iothubs/Iothubkeys', parameters('iotHubName'), variables('iotHubKeyName'))]",
@@ -309,7 +318,13 @@
         "capacity": "[parameters('iotHubUnits')]"
       },
       "properties": {
-        "location": "[variables('location')]"
+        "location": "[variables('location')]",
+        "eventHubEndpoints": {
+          "events": {
+              "partitionCount": "[parameters('iotHubPartitions')]",
+              "retentionTimeInDays": 2
+            }
+          }
       },
       "tags": {
         "IotSuiteType": "[parameters('solutionType')]"
