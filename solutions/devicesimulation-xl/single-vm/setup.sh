@@ -61,6 +61,7 @@ SETUP_URL="${PCS_SOLUTION_SETUP_URL}/single-vm/setup/"
 ### Install Docker
 
 install_docker_ce() {
+    apt-get update
     # Remove old packages if installed
     set +e
     apt-get remove docker docker-engine docker.io
