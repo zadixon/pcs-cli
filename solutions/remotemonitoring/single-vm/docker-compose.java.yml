@@ -21,7 +21,7 @@ services:
       - /app/certs:/app/certs:ro
 
   webui:
-    image: azureiotpcs/pcs-remote-monitoring-webui:${PCS_DOCKER_TAG}
+    image: elvinmorales86/pcs-remote-monitoring-webui:testing
     networks:
       - default_net
     depends_on:

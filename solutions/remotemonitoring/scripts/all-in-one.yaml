@@ -274,7 +274,7 @@ spec:
     spec:
       containers:
       - name: iothub-manager-pod
-        image: azureiotpcs/iothub-manager-{runtime}:{dockerTag}
+        image: elvinmorales86/iothub-manager-{runtime}:testing
         ports:
         - containerPort: 9002
         env:
@@ -285,6 +285,11 @@ spec:
             configMapKeyRef:
               name: deployment-configmap
               key: iothub.connstring
+        - name: PCS_CONFIG_WEBSERVICE_URL
+          valueFrom:
+            configMapKeyRef:
+              name: deployment-configmap
+              key: config.webservice.url
         - name: PCS_AUTH_WEBSERVICE_URL
           valueFrom:
             configMapKeyRef:
@@ -652,7 +657,7 @@ spec:
     spec:
       containers:
       - name: config-pod
-        image: azureiotpcs/pcs-config-{runtime}:{dockerTag}
+        image: elvinmorales86/config-{runtime}:testing
         ports:
         - containerPort: 9005
         env:
@@ -924,7 +929,7 @@ spec:
     spec:
       containers:
       - name: remote-monitoring-webui-pod
-        image: azureiotpcs/pcs-remote-monitoring-webui:{dockerTag}
+        image: elvinmorales86/pcs-remote-monitoring-webui:testing
         ports:
         - containerPort: 10080
         volumeMounts:
