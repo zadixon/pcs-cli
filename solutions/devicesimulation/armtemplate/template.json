@@ -16,10 +16,9 @@
         "description": "The docker images tag to use in 'docker-compose.yml'"
       }
     },
-    "pcsReleaseVersion":
-    {
+    "pcsReleaseVersion": {
       "type": "string",
-      "defaultValue": "DS-2.0.0",
+      "defaultValue": "DS-2.0.0-release",
       "metadata": {
         "description": "The release version is used for repoURL for reverse-proxy-dotnet and vmScriptUri"
       }
