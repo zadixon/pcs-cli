@@ -178,7 +178,7 @@ touch ${WEBUICONFIG_UNSAFE} && chmod 444 ${WEBUICONFIG_UNSAFE}
 
 echo "var DeploymentConfig = {"                        > ${WEBUICONFIG_SAFE}
 echo "  solutionName: '${PCS_SOLUTION_NAME}',"        >> ${WEBUICONFIG_SAFE}
-echo "  authEnabled: false,"                          >> ${WEBUICONFIG_SAFE}
+echo "  authEnabled: true,"                           >> ${WEBUICONFIG_SAFE}
 echo "  authType: '${PCS_WEBUI_AUTH_TYPE}',"          >> ${WEBUICONFIG_SAFE}
 echo "  aad : {"                                      >> ${WEBUICONFIG_SAFE}
 echo "    tenant: '${PCS_WEBUI_AUTH_AAD_TENANT}',"    >> ${WEBUICONFIG_SAFE}
