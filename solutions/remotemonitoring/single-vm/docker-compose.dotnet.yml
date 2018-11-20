@@ -112,7 +112,7 @@ services:
       - PCS_SOLUTION_WEBSITE_URL
 
   config:
-    image: azureiotpcs/pcs-config-dotnet:${PCS_DOCKER_TAG}
+    image: elvinmorales86/pcs-config-dotnet:${PCS_DOCKER_TAG}
     networks:
       - default_net
     depends_on:

@@ -683,7 +683,7 @@ spec:
     spec:
       containers:
       - name: config-pod
-        image: azureiotpcs/pcs-config-{runtime}:{dockerTag}
+        image: elvinmorales86/pcs-config-{runtime}:{dockerTag}
         ports:
         - containerPort: 9005
         env:
